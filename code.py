@@ -167,6 +167,9 @@ def fetch_covid_data(json_covid_data_response):
     output_values["api_last_called"] = "%d/%d\n%d:%02d" % now[1:5]
 
     output_values["county"] = json_covid_data_response[0]["county"]
+
+    county_population = json_covid_data_response[0]["county_population"]
+    per100k_multiplier = float(county_population) / 100000.0
     
     # ---------------------------------
     # community level
@@ -196,16 +199,16 @@ def fetch_covid_data(json_covid_data_response):
     current_cases_per_100k = json_covid_data_response[0]["covid_cases_per_100k"]
     prior_cases_per_100k = json_covid_data_response[1]["covid_cases_per_100k"]
 
-    output_values["cases_per_100k"] = float(current_cases_per_100k)
+    output_values["cases"] = float(current_cases_per_100k) * per100k_multiplier
 
     if current_cases_per_100k > prior_cases_per_100k:
-        output_values["cases_per_100k_direction"] = "up"
+        output_values["cases_direction"] = "up"
     elif current_cases_per_100k < prior_cases_per_100k:
-        output_values["cases_per_100k_direction"] = "down"
+        output_values["cases_direction"] = "down"
 
     case_pct_change_value = get_percent_change(current_cases_per_100k, prior_cases_per_100k)
     if (case_pct_change_value != 0):
-        output_values["cases_per_100k_pct_change"] = case_pct_change_value
+        output_values["cases_pct_change"] = case_pct_change_value
 
     # ---------------------------------
     # inpatient bed utilization
@@ -232,16 +235,16 @@ def fetch_covid_data(json_covid_data_response):
     current_hospital_admissions_per_100k = json_covid_data_response[0]["covid_hospital_admissions_per_100k"]
     prior_hospital_admissions_per_100k = json_covid_data_response[1]["covid_hospital_admissions_per_100k"]
 
-    output_values["hospital_admissions_per_100k"] = float(current_hospital_admissions_per_100k)
+    output_values["hospital_admissions"] = float(current_hospital_admissions_per_100k) * per100k_multiplier
 
     if current_hospital_admissions_per_100k > prior_hospital_admissions_per_100k:
-        output_values["hospital_admissions_per_100k_direction"] = "up"
+        output_values["hospital_admissions_direction"] = "up"
     elif current_hospital_admissions_per_100k < prior_hospital_admissions_per_100k:
-        output_values["hospital_admissions_per_100k_direction"] = "down"
+        output_values["hospital_admissions_direction"] = "down"
 
     hospital_admissions_per_100k_pct_change_value = get_percent_change(current_hospital_admissions_per_100k, prior_hospital_admissions_per_100k)
     if (hospital_admissions_per_100k_pct_change_value != 0):
-        output_values["hospital_admissions_per_100k_pct_change"] = hospital_admissions_per_100k_pct_change_value
+        output_values["hospital_admissions_pct_change"] = hospital_admissions_per_100k_pct_change_value
 
     return output_values
 
@@ -266,15 +269,15 @@ def update_labels(values):
     magtag.set_text(f"As of: {values['date_updated']}", 0, False)
     magtag.set_text(f"{values['county']}", 1, False)
     magtag.set_text(f"Community Level: {capitalize(values['community_level'])}", 2, False)
-    magtag.set_text("Cases/100k: {0:,} | {1:+.0%}".format(values['cases_per_100k'], values['cases_per_100k_pct_change']), 3, False)
-    magtag.set_text("Inpatient Bed: {0:.1%} | {1:+.0%}".format(values['inpatient_bed_utilization'], values['inpatient_bed_utilization_pct_change']), 4, False)
-    magtag.set_text("Admissions/100k: {0:,} | {1:+.0%}".format(values['hospital_admissions_per_100k'], values['hospital_admissions_per_100k_pct_change']), 5, False)
+    magtag.set_text("New COVID Cases: {0:,.0f} : {1:+.0%}".format(values['cases'], values['cases_pct_change']), 3, False)
+    magtag.set_text("Inpatient Bed %: {0:.1%} : {1:+.0%}".format(values['inpatient_bed_utilization'], values['inpatient_bed_utilization_pct_change']), 4, False)
+    magtag.set_text("New Admissions: {0:,.0f} : {1:+.0%}".format(values['hospital_admissions'], values['hospital_admissions_pct_change']), 5, False)
     magtag.set_text(f"{values['api_last_called']}", 6, False)
     
     magtag.set_text(direction_icon(values.get("community_level_direction")), 7, False)
-    magtag.set_text(direction_icon(values.get("cases_per_100k_direction")), 8, False)
+    magtag.set_text(direction_icon(values.get("cases_direction")), 8, False)
     magtag.set_text(direction_icon(values.get("inpatient_bed_utilization_direction")), 9, False)
-    magtag.set_text(direction_icon(values.get("hospital_admissions_per_100k_direction")), 10, False)
+    magtag.set_text(direction_icon(values.get("hospital_admissions_direction")), 10, False)
 
     # magtag.graphics.qrcode(b"https://www.cdc.gov/coronavirus/2019-ncov/science/community-levels.html", qr_size=1, x=SECOND_COLUMN_X_POSITION, y=SECOND_COLUMN_Y_LINE_1_POSITION + SECOND_COLUMN_Y_GAP)
 
