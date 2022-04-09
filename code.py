@@ -136,25 +136,44 @@ magtag.add_text(
     is_data=False,
 )
 
+def get_percent_change(current, previous):
+    change_value = 0
 
-def fetch_covid_data():
+    try:
+        current_number = float(current)
+        previous_number = float(previous)
+    except ValueError:
+        print("current or previous value not a float")
+
+    if current_number != previous_number:
+        try:
+            # change_value = (abs(current_number - previous_number) / previous_number)
+            change_value = (current_number - previous_number) / previous_number
+        except ZeroDivisionError:
+            print("previous number is 0")
+    
+    return change_value
+
+def fetch_covid_data(json_covid_data_response):
     print("fetching data")
 
     now = time.localtime()
     print("Now: ", now)
 
-    raw_data = json.loads(magtag.fetch(auto_refresh=False))
-
     output_values = {}
 
-    output_values["date_updated"] = raw_data[0]["date_updated"][0:10]
+    output_values["date_updated"] = json_covid_data_response[0]["date_updated"][0:10]
 
     output_values["api_last_called"] = "%d/%d\n%d:%02d" % now[1:5]
 
-    output_values["county"] = raw_data[0]["county"]
+    output_values["county"] = json_covid_data_response[0]["county"]
     
-    current_community_level = raw_data[0]["covid_19_community_level"]
-    prior_value_community_level = raw_data[1]["covid_19_community_level"]
+    # ---------------------------------
+    # community level
+    # ---------------------------------
+    
+    current_community_level = json_covid_data_response[0]["covid_19_community_level"]
+    prior_value_community_level = json_covid_data_response[1]["covid_19_community_level"]
 
     output_values["community_level"] = current_community_level
 
@@ -169,36 +188,60 @@ def fetch_covid_data():
          output_values["community_level_direction"] = "down"
     elif current_community_level == "high" and (prior_value_community_level == "low" or prior_value_community_level == "medium"):
          output_values["community_level_direction"] = "up"
-    
-    current_cases_per_100k = raw_data[0]["covid_cases_per_100k"]
-    prior_cases_per_100k = raw_data[1]["covid_cases_per_100k"]
 
-    output_values["cases_per_100k"] = current_cases_per_100k
+    # ---------------------------------
+    # cases per 100k 
+    # ---------------------------------
+
+    current_cases_per_100k = json_covid_data_response[0]["covid_cases_per_100k"]
+    prior_cases_per_100k = json_covid_data_response[1]["covid_cases_per_100k"]
+
+    output_values["cases_per_100k"] = float(current_cases_per_100k)
 
     if current_cases_per_100k > prior_cases_per_100k:
         output_values["cases_per_100k_direction"] = "up"
     elif current_cases_per_100k < prior_cases_per_100k:
         output_values["cases_per_100k_direction"] = "down"
 
-    current_inpatient_bed_utilization = raw_data[0]["covid_inpatient_bed_utilization"]
-    prior_inpatient_bed_utilization = raw_data[1]["covid_inpatient_bed_utilization"]
+    case_pct_change_value = get_percent_change(current_cases_per_100k, prior_cases_per_100k)
+    if (case_pct_change_value != 0):
+        output_values["cases_per_100k_pct_change"] = case_pct_change_value
 
-    output_values["inpatient_bed_utilization"] = current_inpatient_bed_utilization
+    # ---------------------------------
+    # inpatient bed utilization
+    # ---------------------------------
+
+    current_inpatient_bed_utilization = json_covid_data_response[0]["covid_inpatient_bed_utilization"]
+    prior_inpatient_bed_utilization = json_covid_data_response[1]["covid_inpatient_bed_utilization"]
+
+    output_values["inpatient_bed_utilization"] = float(current_inpatient_bed_utilization) / 100
 
     if current_inpatient_bed_utilization > prior_inpatient_bed_utilization:
         output_values["inpatient_bed_utilization_direction"] = "up"
     elif current_inpatient_bed_utilization < prior_inpatient_bed_utilization:
         output_values["inpatient_bed_utilization_direction"] = "down"
 
-    current_hospital_admissions_per_100k = raw_data[0]["covid_hospital_admissions_per_100k"]
-    prior_hospital_admissions_per_100k = raw_data[1]["covid_hospital_admissions_per_100k"]
+    inpatient_bed_utilization_pct_change_value = get_percent_change(current_inpatient_bed_utilization, prior_inpatient_bed_utilization)
+    if (inpatient_bed_utilization_pct_change_value != 0):
+        output_values["inpatient_bed_utilization_pct_change"] = inpatient_bed_utilization_pct_change_value
 
-    output_values["hospital_admissions_per_100k"] = current_hospital_admissions_per_100k
+    # ---------------------------------
+    # hospital admissions per 100k
+    # ---------------------------------
+
+    current_hospital_admissions_per_100k = json_covid_data_response[0]["covid_hospital_admissions_per_100k"]
+    prior_hospital_admissions_per_100k = json_covid_data_response[1]["covid_hospital_admissions_per_100k"]
+
+    output_values["hospital_admissions_per_100k"] = float(current_hospital_admissions_per_100k)
 
     if current_hospital_admissions_per_100k > prior_hospital_admissions_per_100k:
         output_values["hospital_admissions_per_100k_direction"] = "up"
     elif current_hospital_admissions_per_100k < prior_hospital_admissions_per_100k:
         output_values["hospital_admissions_per_100k_direction"] = "down"
+
+    hospital_admissions_per_100k_pct_change_value = get_percent_change(current_hospital_admissions_per_100k, prior_hospital_admissions_per_100k)
+    if (hospital_admissions_per_100k_pct_change_value != 0):
+        output_values["hospital_admissions_per_100k_pct_change"] = hospital_admissions_per_100k_pct_change_value
 
     return output_values
 
@@ -223,9 +266,9 @@ def update_labels(values):
     magtag.set_text(f"As of: {values['date_updated']}", 0, False)
     magtag.set_text(f"{values['county']}", 1, False)
     magtag.set_text(f"Community Level: {capitalize(values['community_level'])}", 2, False)
-    magtag.set_text("Cases/100k: {0:,}".format(values['cases_per_100k']), 3, False)
-    magtag.set_text(f"Inpatient Bed: {values['inpatient_bed_utilization']}", 4, False)
-    magtag.set_text(f"Admissions/100k: {values['hospital_admissions_per_100k']}", 5, False)
+    magtag.set_text("Cases/100k: {0:,} | {1:+.0%}".format(values['cases_per_100k'], values['cases_per_100k_pct_change']), 3, False)
+    magtag.set_text("Inpatient Bed: {0:.1%} | {1:+.0%}".format(values['inpatient_bed_utilization'], values['inpatient_bed_utilization_pct_change']), 4, False)
+    magtag.set_text("Admissions/100k: {0:,} | {1:+.0%}".format(values['hospital_admissions_per_100k'], values['hospital_admissions_per_100k_pct_change']), 5, False)
     magtag.set_text(f"{values['api_last_called']}", 6, False)
     
     magtag.set_text(direction_icon(values.get("community_level_direction")), 7, False)
@@ -233,25 +276,25 @@ def update_labels(values):
     magtag.set_text(direction_icon(values.get("inpatient_bed_utilization_direction")), 9, False)
     magtag.set_text(direction_icon(values.get("hospital_admissions_per_100k_direction")), 10, False)
 
-    magtag.graphics.qrcode(b"https://www.cdc.gov/coronavirus/2019-ncov/science/community-levels.html", qr_size=1, x=SECOND_COLUMN_X_POSITION, y=SECOND_COLUMN_Y_LINE_1_POSITION + SECOND_COLUMN_Y_GAP)
+    # magtag.graphics.qrcode(b"https://www.cdc.gov/coronavirus/2019-ncov/science/community-levels.html", qr_size=1, x=SECOND_COLUMN_X_POSITION, y=SECOND_COLUMN_Y_LINE_1_POSITION + SECOND_COLUMN_Y_GAP)
 
     magtag.refresh()
     # wait 2 seconds for display to complete
     time.sleep(2)
 
 
-magtag.peripherals.neopixels.brightness = 0.1
-magtag.peripherals.neopixel_disable = False  # turn on lights
-magtag.peripherals.neopixels.fill(0x0F0000)  # red!
+# magtag.peripherals.neopixels.brightness = 0.1
+magtag.peripherals.neopixel_disable = True  # turn on lights
+# magtag.peripherals.neopixels.fill(0x0F0000)  # red!
 
 magtag.get_local_time()
 
 try:
-    output = fetch_covid_data()
+    output = fetch_covid_data(json.loads(magtag.fetch(auto_refresh=False)))
     update_labels(output)
     # OK we're done!
-    magtag.peripherals.neopixels.fill(0x000F00)  # greten
-except (ValueError, RuntimeError) as e:
+    # magtag.peripherals.neopixels.fill(0x000F00)  # greten
+except (ValueError, RuntimeError, ConnectionError) as e:
     print("Some error occured, trying again later -", e)
 
 time.sleep(2)  # let screen finish updating
