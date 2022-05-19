@@ -265,10 +265,10 @@ def fetch_covid_data(json_covid_data_response):
     inpatient_bed_utilization_pct_change_value = get_percent_change(
         current_inpatient_bed_utilization, prior_inpatient_bed_utilization
     )
-    if inpatient_bed_utilization_pct_change_value != 0:
-        output_values[
-            "inpatient_bed_utilization_pct_change"
-        ] = inpatient_bed_utilization_pct_change_value
+
+    output_values[
+        "inpatient_bed_utilization_pct_change"
+    ] = inpatient_bed_utilization_pct_change_value
 
     # ---------------------------------
     # hospital admissions per 100k
@@ -321,29 +321,30 @@ def capitalize(input_string):
 
 def update_labels(values):
     # Set the labels for the current game data
-    magtag.set_text(f"As of: {values['date_updated']}", 0, False)
-    magtag.set_text(f"{values['county']}", 1, False)
+    magtag.set_text(f"As of: {values.get('date_updated')}", 0, False)
+    magtag.set_text(f"{values.get('county')}", 1, False)
     magtag.set_text(
-        f"Community Level: {capitalize(values['community_level'])}", 2, False
+        f"Community Level: {capitalize(values.get('community_level'))}", 2, False
     )
     magtag.set_text(
         "New COVID Cases: {0:,.0f} : {1:+.0%}".format(
-            values["cases"], values["cases_pct_change"]
+            values.get("cases"), values.get("cases_pct_change")
         ),
         3,
         False,
     )
     magtag.set_text(
         "Inpatient Bed %: {0:.1%} : {1:+.0%}".format(
-            values["inpatient_bed_utilization"],
-            values["inpatient_bed_utilization_pct_change"],
+            values.get("inpatient_bed_utilization"),
+            values.get("inpatient_bed_utilization_pct_change"),
         ),
         4,
         False,
     )
     magtag.set_text(
         "New Admissions: {0:,.0f} : {1:+.0%}".format(
-            values["hospital_admissions"], values["hospital_admissions_pct_change"]
+            values.get("hospital_admissions"),
+            values.get("hospital_admissions_pct_change"),
         ),
         5,
         False,
