@@ -239,8 +239,8 @@ def fetch_covid_data(json_covid_data_response):
     case_pct_change_value = get_percent_change(
         current_cases_per_100k, prior_cases_per_100k
     )
-    if case_pct_change_value != 0:
-        output_values["cases_pct_change"] = case_pct_change_value
+
+    output_values["cases_pct_change"] = case_pct_change_value
 
     print(case_pct_change_value)
 
@@ -293,10 +293,10 @@ def fetch_covid_data(json_covid_data_response):
     hospital_admissions_per_100k_pct_change_value = get_percent_change(
         current_hospital_admissions_per_100k, prior_hospital_admissions_per_100k
     )
-    if hospital_admissions_per_100k_pct_change_value != 0:
-        output_values[
-            "hospital_admissions_pct_change"
-        ] = hospital_admissions_per_100k_pct_change_value
+
+    output_values[
+        "hospital_admissions_pct_change"
+    ] = hospital_admissions_per_100k_pct_change_value
 
     return output_values
 
