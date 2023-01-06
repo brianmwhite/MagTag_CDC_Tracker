@@ -142,6 +142,7 @@ def get_percent_change(current, previous):
         previous_number = float(previous)
     except ValueError:
         print("current or previous value not a float")
+        pass
 
     if current_number != previous_number:
         try:
@@ -149,6 +150,7 @@ def get_percent_change(current, previous):
             change_value = (current_number - previous_number) / previous_number
         except ZeroDivisionError:
             print("previous number is 0")
+            pass
 
     return change_value
 
@@ -160,6 +162,7 @@ def get_float_or_zero(string_value):
         float_value = float(string_value)
     except ValueError:
         print("current or previous value not a float")
+        pass
 
     return float_value
 
@@ -380,6 +383,7 @@ try:
     # magtag.peripherals.neopixels.fill(0x000F00)  # greten
 except (ValueError, RuntimeError, ConnectionError) as e:
     print("Some error occured, trying again later -", e)
+    pass
 
 time.sleep(2)  # let screen finish updating
 
